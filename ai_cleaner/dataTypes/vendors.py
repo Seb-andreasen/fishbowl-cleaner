@@ -6,7 +6,6 @@ from io import StringIO
 # Initialize OpenAI (ensure you've set your API key in your environment variables or replace 'your_api_key' with your actual API key)
 
 
-api_key = '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'
 
 import json
 import openai
