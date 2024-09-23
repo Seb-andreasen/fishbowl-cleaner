@@ -19,7 +19,7 @@ if not check_password():
 
 # Add an image to the sidebar
 #center 
-st.sidebar.image('../img/fishbowl-inventory.webp', use_column_width=True)
+st.sidebar.image('../img/fishbowl-inventory.png', use_column_width=True)
 
 
 # Streamlit app interface
