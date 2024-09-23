@@ -90,7 +90,7 @@ def customers_display():
 
         client = OpenAI(api_key=api_key)
         completion = client.chat.completions.create(
-            model="gpt-3.5-turbo-1106",
+            model="gpt-4o-mini",
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": """    You are a skilled data analyst specialized in parsing international addresses. Given the full address: "{address}", extract the following components:
