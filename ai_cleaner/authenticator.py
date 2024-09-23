@@ -6,6 +6,8 @@ import streamlit as st
 def check_password():
     """Returns `True` if the user had the correct password."""
 
+    logo_url = 'https://github.com/Seb-andreasen/fishbowl-cleaner/blob/main/ai_cleaner/img/fishbowl-inventory.png?raw=true'
+    st.image(logo_url, caption='Cleaning', use_column_width=True)
     def password_entered():
         """Checks whether a password entered by the user is correct."""
         if hmac.compare_digest(st.session_state["password"], st.secrets["password"]):
