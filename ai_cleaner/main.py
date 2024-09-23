@@ -34,7 +34,7 @@ st.title('Fishbowl Cleaner')
 # Sidebar navigation using radio buttons
 section = st.sidebar.radio(
     "Choose data to transform",
-    ["Home", "Customers", "Vendors", "BOM", "[Placeholder]", "[Placeholder]"]
+    ["Home", "Customers", "[Placeholder] Vendors", "[Placeholder] BOM"]
 )
 
 # Display different content based on the selected section
@@ -52,8 +52,9 @@ if section == "Home":
 
     # Display the image with a caption
     st.image(image_url, caption='Quickbooks to Fishbowl Inventory', use_column_width=True)
-elif section == "Vendors":
-    vendors_display()
+elif section == "[Placeholder] Vendors":
+        st.title('Clean Quickboooks Vendors')
+        ##vendors_display()
 
 elif section == "Customers":
     st.title('Clean Quickboooks Customers')
