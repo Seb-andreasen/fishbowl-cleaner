@@ -10,7 +10,7 @@ import altair as alt
 import json
 
 # Initialize OpenAI API key
-api_key = ''
+api_key = st.secrets["openai"]
 
 def customers_display():
     def transform_input_data(input_data):
