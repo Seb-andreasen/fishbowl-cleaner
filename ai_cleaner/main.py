@@ -21,8 +21,8 @@ if not check_password():
 #center 
 
 import os
-img_path_logo = os.path.abspath('img/fishbowl-inventory.png')
-st.sidebar.image(img_path_logo, use_column_width=True)
+logo_url = 'https://github.com/Seb-andreasen/fishbowl-cleaner/blob/main/ai_cleaner/img/fishbowl-inventory.png?raw=true'
+st.sidebar.image(logo_url, use_column_width=True)
 
 
 # Streamlit app interface
@@ -47,10 +47,11 @@ if section == "Home":
     st.info("Select the kind of data you want to transform from the sidebar.", icon="ℹ️")
     from PIL import Image
     # Load the image from a file
-    image = Image.open('img/fb_inv.png')
+    image_url = 'https://github.com/Seb-andreasen/fishbowl-cleaner/blob/main/ai_cleaner/img/fb_inv.png?raw=true'
+    #= Image.open('img/fb_inv.png')
 
     # Display the image with a caption
-    st.image(image, caption='Quickbooks to Fishbowl Inventory', use_column_width=True)
+    st.image(image_url, caption='Quickbooks to Fishbowl Inventory', use_column_width=True)
 elif section == "Vendors":
     vendors_display()
 
