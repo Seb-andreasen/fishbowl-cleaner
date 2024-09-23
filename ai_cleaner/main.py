@@ -19,7 +19,7 @@ if not check_password():
 
 # Add an image to the sidebar
 #center 
-st.sidebar.image('../img/fishbowl-inventory.png', use_column_width=True)
+st.sidebar.image('img/fishbowl-inventory.png', use_column_width=True)
 
 
 # Streamlit app interface
@@ -44,7 +44,7 @@ if section == "Home":
     st.info("Select the kind of data you want to transform from the sidebar.", icon="ℹ️")
     from PIL import Image
     # Load the image from a file
-    image = Image.open('../img/fb_inv.png')
+    image = Image.open('img/fb_inv.png')
 
     # Display the image with a caption
     st.image(image, caption='Quickbooks to Fishbowl Inventory', use_column_width=True)
