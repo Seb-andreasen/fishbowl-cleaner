@@ -1,0 +1,5 @@
+#ignore folder data_examples
+data_examples/
+notebooks/
+.env
+legacy/
