@@ -12,6 +12,8 @@ import json
 # Initialize OpenAI API key
 api_key = st.secrets["openai"]
 
+#
+
 def customers_display():
     def transform_input_data(input_data):
         start_index = input_data[input_data.iloc[:, 0] == "ENDCUSTNAMEDICT"].index[0]
@@ -25,22 +27,28 @@ def customers_display():
 
     def transform_columns(input_data):
         target_columns = ['Name', 'AddressName', 'AddressContact', 'AddressType', 'IsDefault',
-                          'Address', 'City', 'State', 'Zip', 'Country', 'Residential', 'Main',
-                          'Home', 'Work', 'Mobile', 'Fax', 'Email', 'Pager', 'Web', 'Other',
-                          'Group', 'CreditLimit', 'Status', 'Active', 'TaxRate', 'Salesman',
-                          'DefaultPriority', 'Number', 'PaymentTerms', 'TaxExempt',
-                          'TaxExemptNumber', 'URL', 'CarrierName', 'CarrierService',
-                          'ShippingTerms', 'AlertNotes', 'QuickBooksClassName', 'ToBeEmailed',
-                          'ToBePrinted', 'IssuableStatus']
+                        'Address', 'City', 'State', 'Zip', 'Country', 'Residential', 'Main',
+                        'Home', 'Work', 'Mobile', 'Fax', 'Email', 'Pager', 'Web', 'Other',
+                        'Group', 'CreditLimit', 'Status', 'Active', 'TaxRate', 'Salesman',
+                        'DefaultPriority', 'Number', 'PaymentTerms', 'TaxExempt',
+                        'TaxExemptNumber', 'URL', 'CarrierName', 'CarrierService',
+                        'ShippingTerms', 'AlertNotes', 'QuickBooksClassName', 'ToBeEmailed',
+                        'ToBePrinted', 'IssuableStatus',
+                        'BillingAddress', 'ShipAddress', 'BillingAddressContact', 'ShipAddressContact']  # Added these columns
 
-        df = pd.DataFrame(columns=target_columns)
+        df = pd.DataFrame()
         df['Name'] = input_data['NAME']
+
+        # Store billing and shipping address contacts
         df['BillingAddressContact'] = input_data['BADDR1']
+        df['ShipAddressContact'] = input_data['SADDR1']
+
+        # Store billing and shipping addresses
         df['BillingAddress'] = input_data[['BADDR2', 'BADDR3', 'BADDR4', 'BADDR5']].apply(
             lambda row: ', '.join(filter(pd.notna, row)), axis=1)
-        df['ShipAddressContact'] = input_data['SADDR1']
         df['ShipAddress'] = input_data[['SADDR2', 'SADDR3', 'SADDR4', 'SADDR5']].apply(
             lambda row: ', '.join(filter(pd.notna, row)), axis=1)
+
         df['Main'] = input_data['PHONE1']
         df['Home'] = input_data['PHONE2']
         df['Fax'] = input_data['FAXNUM']
@@ -49,19 +57,19 @@ def customers_display():
         df['TaxExempt'] = input_data['TAXABLE'].apply(lambda x: False if x == 'Y' else None)
         df['Status'] = 'Normal'
         df['Active'] = True
-        df['ShippingTerms'] = None #'Prepaid & Billed'
+        df['ShippingTerms'] = None  # 'Prepaid & Billed'
         df['QuickBooksClassName'] = None
         df['ToBeEmailed'] = True
         df['ToBePrinted'] = True
         df['Salesman'] = input_data['REP']
-        
-        # Create an empty list to collect the split rows // Some customers have both billing and shipping addresses in the same row. 
+
+        # Create an empty list to collect the split rows
         split_rows = []
 
         # Iterate over the DataFrame and split rows if both addresses exist
         for _, row in df.iterrows():
-            has_billing = pd.notna(row['BillingAddress']) and row['BillingAddress'] != ''
-            has_shipping = pd.notna(row['ShipAddress']) and row['ShipAddress'] != ''
+            has_billing = pd.notna(row['BillingAddress']) and row['BillingAddress'].strip() != ''
+            has_shipping = pd.notna(row['ShipAddress']) and row['ShipAddress'].strip() != ''
 
             # Create separate rows for billing and shipping if both exist
             if has_billing:
@@ -82,76 +90,124 @@ def customers_display():
 
         # Convert the list of split rows into a DataFrame
         final_df = pd.DataFrame(split_rows, columns=target_columns)
-
+        print(final_df.columns)
+        print(final_df.head())
         return final_df
 
     def clean_address(address_column, instructions):
+        
         prompt_text = f"Given the address {address_column}, Output the cleaned row in JSON format. You might receive custom instructions for how to clean the file. If no instructions focus on extracting the five default columns: {instructions}."
 
         client = OpenAI(api_key=api_key)
-        completion = client.chat.completions.create(
-            model="gpt-4o-mini",
-            response_format={"type": "json_object"},
-            messages=[
-                {"role": "system", "content": """    You are a skilled data analyst specialized in parsing international addresses. Given the full address: "{address}", extract the following components:
-                                                        1. Street Address (Address)
-                                                        2. City
-                                                        3. State or Province
-                                                        4. Postal Code (Zip)
-                                                        5. Country
+        
+        try:
+        
+            completion = client.chat.completions.create(
+                model="gpt-4o-mini",
+                response_format={"type": "json_object"},
+                messages=[
+                    {"role": "system", "content": """    You are a skilled data analyst specialized in parsing international addresses. Given the full address: "{address}", extract the following components:
+                                                            1. Street Address (Address)
+                                                            2. City
+                                                            3. State or Province
+                                                            4. Postal Code (Zip)
+                                                            5. Country
 
-                                                        Provide the results as a JSON object with keys: Address, City, State, Zip, Country.
-                                                        """},
-                {"role": "user", "content": prompt_text},
-            ]
-        )
+                                                            Provide the results as a JSON object with keys: Address, City, State, Zip, Country.
+                                                            """},
+                    {"role": "user", "content": prompt_text},
+                ]
+            )
 
-        return completion.choices[0].message.content
+
+            response = completion.choices[0].message.content
+            response = json.loads(response)
+            
+        except Exception as e:
+            response = json.load({
+                'Address': None,
+                'City': None,
+                'State': None,
+                'Zip': None,
+                'Country': None
+            })
+            
+            st.error(f"An error occurred: {e}")
+            
+            
+        
+        return response
+
+
+
+
+
 
     def process_file(df, instructions):
-        cleaned_addresses = []
+    # Initialize the columns in df
+        df[['Address', 'City', 'State', 'Zip', 'Country']] = None
+
         for index, row in df.iterrows():
-            if row['BillingAddress']:
-                cleaned_address = clean_address(row['BillingAddress'], instructions)
-                json_data = json.loads(cleaned_address)
-                cleaned_addresses.append(json_data)
-            elif row['ShipAddress']:
-                cleaned_address = clean_address(row['ShipAddress'], instructions)
-                json_data = json.loads(cleaned_address)
-                cleaned_addresses.append(json_data)
+            address_to_clean = None
+            if pd.notna(row.get('BillingAddress', None)) and row['BillingAddress'].strip() != '':
+                address_to_clean = row['BillingAddress']
+                print(address_to_clean)
+            elif pd.notna(row.get('ShipAddress', None)) and row['ShipAddress'].strip() != '':
+                address_to_clean = row['ShipAddress']
 
-        df_cleaned = pd.DataFrame(cleaned_addresses)
-        for column in ['Address', 'City', 'State', 'Zip', 'Country']:
-            if column not in df_cleaned.columns:
-                df_cleaned[column] = None
+            if address_to_clean:
+                json_data = clean_address(address_to_clean, instructions)
+                df.at[index, 'Address'] = json_data.get('Address')
+                df.at[index, 'City'] = json_data.get('City')
+                df.at[index, 'State'] = json_data.get('State')
+                df.at[index, 'Zip'] = json_data.get('Zip')
+                df.at[index, 'Country'] = json_data.get('Country')
 
-        df[['Address', 'City', 'State', 'Zip', 'Country']] = df_cleaned[['Address', 'City', 'State', 'Zip', 'Country']]
-        df['AddressContact'] = df['BillingAddressContact'].fillna(df['ShipAddressContact'])
+        # Set AddressContact
+        if 'BillingAddressContact' in df.columns and 'ShipAddressContact' in df.columns:
+            df['AddressContact'] = df['BillingAddressContact'].fillna(df['ShipAddressContact'])
+        elif 'BillingAddressContact' in df.columns:
+            df['AddressContact'] = df['BillingAddressContact']
+        elif 'ShipAddressContact' in df.columns:
+            df['AddressContact'] = df['ShipAddressContact']
+        else:
+            df['AddressContact'] = None
 
         return df
-
+    
+    
+    
+    
     def address_type(df):
+        # Initialize new columns with default values
         df['AddressType'] = None
         df['IsDefault'] = False
         df['AddressName'] = None
 
         for name, group in df.groupby('Name'):
-            billing_addresses = group['BillingAddress'].apply(lambda x: bool(x.strip()) if pd.notna(x) else False)
-            if billing_addresses.any():
-                billing_indices = group[billing_addresses].index
-                for i, idx in enumerate(billing_indices):
-                    df.loc[idx, 'AddressType'] = 50 if i == 0 else 20
-                    df.loc[idx, 'IsDefault'] = True if i == 0 else False
-                    df.loc[idx, 'AddressName'] = f"Billing Address {i}" if i > 0 else "Main Billing Address"
+            # Check if 'BillingAddress' exists before processing
+            if 'BillingAddress' in group.columns:
+                billing_addresses = group['BillingAddress'].apply(lambda x: bool(x.strip()) if pd.notna(x) else False)
+                if billing_addresses.any():
+                    billing_indices = group[billing_addresses].index
+                    for i, idx in enumerate(billing_indices):
+                        df.loc[idx, 'AddressType'] = 50 if i == 0 else 20
+                        df.loc[idx, 'IsDefault'] = True if i == 0 else False
+                        df.loc[idx, 'AddressName'] = f"Billing Address {i}" if i > 0 else "Main Billing Address"
             
-            shipping_addresses = group['ShipAddress'].apply(lambda x: bool(x.strip()) if pd.notna(x) else False)
-            if shipping_addresses.any():
-                shipping_indices = group[shipping_addresses].index
-                for i, idx in enumerate(shipping_indices):
-                    df.loc[idx, 'AddressType'] = 10
-                    df.loc[idx, 'AddressName'] = f"Sales Address {i+1}"
+            # Check if 'ShipAddress' exists before processing
+            if 'ShipAddress' in group.columns:
+                shipping_addresses = group['ShipAddress'].apply(lambda x: bool(x.strip()) if pd.notna(x) else False)
+                if shipping_addresses.any():
+                    shipping_indices = group[shipping_addresses].index
+                    for i, idx in enumerate(shipping_indices):
+                        df.loc[idx, 'AddressType'] = 10
+                        df.loc[idx, 'AddressName'] = f"Sales Address {i+1}"
         
-        df.drop(columns=['BillingAddress', 'BillingAddressContact', 'ShipAddress', 'ShipAddressContact'], inplace=True)
+        # Drop columns only if they exist
+        columns_to_drop = ['BillingAddress', 'BillingAddressContact', 'ShipAddress', 'ShipAddressContact']
+        df.drop(columns=[col for col in columns_to_drop if col in df.columns], inplace=True)
+        
         return df
 
     st.subheader("Get started")
@@ -227,9 +283,7 @@ def customers_display():
             st.warning("The data contain rows with missing address information. These will not be transformed.")
             st.write("Incomplete Data")
             st.dataframe(incomplete_data)
-        
-
-            # Provide a download button for the incomplete data
+                        # Provide a download button for the incomplete data
             csv_incomplete = incomplete_data.to_csv(index=False)
             st.download_button(
                 label="Download Incomplete Data as CSV",
@@ -238,6 +292,12 @@ def customers_display():
                 mime='text/csv',
                 key="download-incomplete")
                 
+
+            st.write("Complete Data")
+            st.dataframe(complete_data)
+        
+
+
         else :
             st.success("No incomplete data found. You can proceed with transforming the data.")
         
@@ -251,8 +311,9 @@ def customers_display():
     if st.button('Transform Data', key="transform-data"):
         if uploaded_file:
             bar = st.progress(10)
-            df = transform_columns(complete_data)
-            transformed_data_no_type = process_file(df, instructions)
+            df_transformed_columns = transform_columns(complete_data)
+            transformed_data_no_type = process_file(df_transformed_columns, instructions)
+            print(transformed_data_no_type.head())
             transformed_data = address_type(transformed_data_no_type)
             st.session_state.transformed_data = transformed_data
             bar.progress(100)
