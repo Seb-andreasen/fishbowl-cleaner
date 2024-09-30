@@ -90,8 +90,8 @@ def customers_display():
 
         # Convert the list of split rows into a DataFrame
         final_df = pd.DataFrame(split_rows, columns=target_columns)
-        print(final_df.columns)
-        print(final_df.head())
+        #print(final_df.columns)
+        #print(final_df.head())
         return final_df
 
     def clean_address(address_column, instructions):
@@ -120,17 +120,20 @@ def customers_display():
             )
 
 
-            response = completion.choices[0].message.content
-            response = json.loads(response)
+            response_message = completion.choices[0].message.content
+            response = json.loads(response_message)
             
         except Exception as e:
-            response = json.load({
+            response_message = {
                 'Address': None,
                 'City': None,
                 'State': None,
                 'Zip': None,
                 'Country': None
-            })
+            }
+            
+            
+            response = json.load(response_message)
             
             st.error(f"An error occurred: {e}")
             
@@ -151,7 +154,7 @@ def customers_display():
             address_to_clean = None
             if pd.notna(row.get('BillingAddress', None)) and row['BillingAddress'].strip() != '':
                 address_to_clean = row['BillingAddress']
-                print(address_to_clean)
+                #print(address_to_clean)
             elif pd.notna(row.get('ShipAddress', None)) and row['ShipAddress'].strip() != '':
                 address_to_clean = row['ShipAddress']
 
@@ -313,9 +316,11 @@ def customers_display():
             bar = st.progress(10)
             df_transformed_columns = transform_columns(complete_data)
             transformed_data_no_type = process_file(df_transformed_columns, instructions)
-            print(transformed_data_no_type.head())
+            #print(transformed_data_no_type.head())
+            bar.progress(50)
             transformed_data = address_type(transformed_data_no_type)
             st.session_state.transformed_data = transformed_data
+            bar.progress(90)
             bar.progress(100)
             st.info("Data has been transformed!")
 
